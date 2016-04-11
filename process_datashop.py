@@ -26,6 +26,10 @@ if __name__ == "__main__":
                        help="the type of cross validation to use. All cv's return the root mean squared error.")
     parser.add_argument('-nfolds', type=int, default=3, 
                         help="the number of cross validation folds, when using cv (default=3).")
+    parser.add_argument('-nrepeats', type=int, default=5, 
+                        help="the number of times to repeat cross validation, when using cv (default=5).")
+    parser.add_argument('-cv_o', type=argparse.FileType('w'), 
+                       help="file to output cv results")
     parser.add_argument('-pred_o', type=argparse.FileType('w'), 
                        help="file to output predictions")
     parser.add_argument('-param_o', type=argparse.FileType('w'), 
