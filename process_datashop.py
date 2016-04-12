@@ -1,15 +1,14 @@
-import sys
 import argparse
 
+from tabulate import tabulate
 import numpy as np
 from scipy.sparse import hstack
 from sklearn.feature_extraction import DictVectorizer
-from sklearn.cross_validation import cross_val_score
 from sklearn.cross_validation import KFold
 from sklearn.cross_validation import StratifiedKFold
 from sklearn.cross_validation import LabelKFold
 
-
+from util import invlogit
 from custom_logistic import CustomLogistic
 from bounded_logistic import BoundedLogistic
 
@@ -18,15 +17,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Process datashop file.')
     parser.add_argument('student_step_file', type=argparse.FileType('r'),
                         help="the student step export from datashop")
-    #parser.add_argument('-m', choices=["AFM", "AFM+S", "PFA", "PFA+S"], 
-    #                   help='the model to use (default="AFM+S")',
-    #                    default="AFM+S")
+    parser.add_argument('-m', choices=["AFM", "AFM+S"], 
+                       help='the model to use (default="AFM+S")',
+                        default="AFM+S")
     #parser.add_argument('-score', choices=['unstratifiedCV', 'stratifiedCV',
     #                                       'itemCV', 'studentCV'], 
     #                    default="stratifiedCV",
     #                   help='the type of RMSE cross validation to use (default="stratifiedCV").')
-    #parser.add_argument('-nfolds', type=int, default=3, 
-    #                    help="the number of cross validation folds, when using cv (default=3).")
+    parser.add_argument('-nfolds', type=int, default=3, 
+                        help="the number of cross validation folds, when using cv (default=3).")
     #parser.add_argument('-nrepeats', type=int, default=5, 
     #                    help="the number of times to repeat cross validation, when using cv (default=5).")
     #parser.add_argument('-cv_o', type=argparse.FileType('w'), 
@@ -62,8 +61,6 @@ if __name__ == "__main__":
     row_ids = []
     kcs = []
     opps = []
-    pos_opps = []
-    neg_opps = []
     y = []
     stu = []
     student_label = []
@@ -82,7 +79,7 @@ if __name__ == "__main__":
         kcs.append({kc: 1 for kc in kc_labels})
 
         kc_opps = [o for o in data[header[opp]].split("~~") if o != ""]
-        opps.append({kc+" opportunities": int(kc_opps[i]) for i,kc in enumerate(kc_labels)})
+        opps.append({kc: int(kc_opps[i]) for i,kc in enumerate(kc_labels)})
 
         if data[header['First Attempt']] == "correct":
             y.append(1)
@@ -93,47 +90,18 @@ if __name__ == "__main__":
         stu.append({student: 1})
         student_label.append(student)
 
-        pos = {}
-        nos = {}
-
-        if data[header['First Attempt']] == "correct":
-            for kc in kc_labels:
-                po_name = student + "-" + kc + "-pos-opp"
-                pos_opp = counter.setdefault(po_name, 1)
-                counter[po_name] = pos_opp + 1
-                pos[po_name] = pos_opp
-        else:
-            for kc in kc_labels:
-                no_name = student + "-" + kc + "-neg-opp"
-                neg_opp = counter.setdefault(no_name, 1)
-                counter[no_name] = neg_opp + 1
-                nos[no_name] = neg_opp
-
-        pos_opps.append(pos)
-        neg_opps.append(nos)
-
         item = data[header['Problem Name']] + "##" + data[header['Step Name']]
         item_label.append(item)
 
         row_id = data[header['Row']]
         row_ids.append(row_id)
 
-    v = DictVectorizer()
-    S = v.fit_transform(stu)
-    Q = v.fit_transform(kcs)
-    O = v.fit_transform(opps)
-    PO = v.fit_transform(pos_opps)
-    NO = v.fit_transform(neg_opps)
-
-    #print(list(np.add(np.sum(PO.toarray(), axis=1), np.sum(NO.toarray(),
-    #                                                       axis=1))))
-    #print(list(np.sum(O.toarray(), axis=1)))
-
-    #print(PO.shape)
-    #print(NO.shape)
-
-    #print(Q)
-    #print(O)
+    sv = DictVectorizer()
+    qv = DictVectorizer()
+    ov = DictVectorizer()
+    S = sv.fit_transform(stu)
+    Q = qv.fit_transform(kcs)
+    O = ov.fit_transform(opps)
 
     ## AFM
     X = hstack((S, Q, O))
@@ -146,34 +114,107 @@ if __name__ == "__main__":
     bounds += [(None, None) for i in range(Q.shape[1])] 
     bounds += [(0, None) for i in range(O.shape[1])]
     
-    # PFA
-    #X = hstack((Q, PO, NO))
-    #y = np.array(y)
-    #l2 = 0.01
-
-    #bounds = [(None, None) for i in range(Q.shape[1])] 
-    #bounds += [(0, None) for i in range(PO.shape[1])]
-    #bounds += [(0, None) for i in range(NO.shape[1])]
-
     X = X.toarray()
     X2 = Q.toarray()
 
-    cv = KFold(len(y), n_folds=3, shuffle=True)
-    #cv = StratifiedKFold(y, n_folds=3, shuffle=True)
-    #cv = LabelKFold(student_label, n_folds=10)
-    ##cv = LabelKFold(item_label, n_folds=3)
-    est = BoundedLogistic(first_bounds=bounds, first_l2=l2)
-    est2 = CustomLogistic(bounds=bounds, l2=l2)
-    scores = []
-    scores2 = []
-    for train_index, test_index in cv:
-        X_train, X_test = X[train_index], X[test_index]
-        X2_train, X2_test = X2[train_index], X2[test_index]
-        y_train, y_test = y[train_index], y[test_index]
-        est.fit(X_train, X2_train, y_train)
-        est2.fit(X_train, y_train)
-        scores.append(est.mean_squared_error(X_test, X2_test, y_test))
-        scores2.append(est2.mean_squared_error(X_test, y_test))
-    print('AFM+S RMSE CV:', np.mean(np.sqrt(scores)))
-    print('AFM RMSE CV:', np.mean(np.sqrt(scores2)))
+    if args.m == "AFM":
+        m = CustomLogistic(bounds=bounds, l2=l2, fit_intercept=False)
+        m.fit(X, y)
+        coef_s = m.coef_[0:S.shape[1]]
+        coef_s = [[k, v, invlogit(v)] for k,v in sv.inverse_transform([coef_s])[0].items()]
+        coef_q = m.coef_[S.shape[1]:S.shape[1]+Q.shape[1]]
+        coef_qint = qv.inverse_transform([coef_q])[0]
+        coef_o = m.coef_[S.shape[1]+Q.shape[1]:S.shape[1]+Q.shape[1]+O.shape[1]]
+        coef_qslope = ov.inverse_transform([coef_o])[0]
+
+        kc_vals = []
+        all_kcs = set(coef_qint).union(set(coef_qslope))
+        for kc in all_kcs:
+            kc_vals.append([kc, coef_qint.setdefault(kc, 0.0), 
+                            invlogit(coef_qint.setdefault(kc, 0.0)), 
+                            coef_qslope.setdefault(kc, 0.0)])
+
+        cvs = [('Unstratified CV', KFold(len(y), n_folds=args.nfolds, shuffle=True)),
+              ('Stratified CV', StratifiedKFold(y, n_folds=args.nfolds, shuffle=True)),
+              ('Student CV', LabelKFold(student_label, n_folds=args.nfolds)), 
+              ('Item CV', LabelKFold(item_label, n_folds=args.nfolds))]
+
+        scores_header = []
+        scores = []
+        for cv_name, cv in cvs:
+            score = []
+            for train_index, test_index in cv:
+                X_train, X_test = X[train_index], X[test_index]
+                y_train, y_test = y[train_index], y[test_index]
+                m.fit(X_train, y_train)
+                score.append(m.mean_squared_error(X_test, y_test))
+            scores_header.append(cv_name)
+            scores.append(np.mean(np.sqrt(score)))
+
+        print(tabulate([scores], scores_header, floatfmt=".3f"))
+        print()
+
+        print(tabulate(kc_vals, ['KC Name', 'Intercept (logit)', 
+                                 'Intercept (prob)', 'Slope'],
+                       floatfmt=".3f"))
+        
+        print()
+
+        print(tabulate(coef_s, ['Anon Student Id', 'Intercept (logit)',
+                                'Intercept (prob)'],
+                       floatfmt=".3f"))
+
+
+    elif args.m == "AFM+S":
+        m = BoundedLogistic(first_bounds=bounds, first_l2=l2)
+        m.fit(X, X2, y)
+        coef_s = m.coef1_[0:S.shape[1]]
+        coef_s = [[k, v, invlogit(v)] for k,v in sv.inverse_transform([coef_s])[0].items()]
+        coef_q = m.coef1_[S.shape[1]:S.shape[1]+Q.shape[1]]
+        coef_qint = qv.inverse_transform([coef_q])[0]
+        coef_o = m.coef1_[S.shape[1]+Q.shape[1]:S.shape[1]+Q.shape[1]+O.shape[1]]
+        coef_qslope = ov.inverse_transform([coef_o])[0]
+        coef_qslip = qv.inverse_transform([m.coef2_])[0]
+        
+        kc_vals = []
+        all_kcs = set(coef_qint).union(set(coef_qslope)).union(set(coef_qslip))
+        for kc in all_kcs:
+            kc_vals.append([kc, 
+                            coef_qint.setdefault(kc, 0.0), 
+                            invlogit(coef_qint.setdefault(kc, 0.0)), 
+                            coef_qslope.setdefault(kc, 0.0),
+                            coef_qslip.setdefault(kc, 0.0)])
+
+        cvs = [('Unstratified CV', KFold(len(y), n_folds=args.nfolds, shuffle=True)),
+              ('Stratified CV', StratifiedKFold(y, n_folds=args.nfolds, shuffle=True)),
+              ('Student CV', LabelKFold(student_label, n_folds=args.nfolds)), 
+              ('Item CV', LabelKFold(item_label, n_folds=args.nfolds))]
+
+        scores_header = []
+        scores = []
+        for cv_name, cv in cvs:
+            score = []
+            for train_index, test_index in cv:
+                X_train, X_test = X[train_index], X[test_index]
+                X2_train, X2_test = X2[train_index], X2[test_index]
+                y_train, y_test = y[train_index], y[test_index]
+                m.fit(X_train, X2_train, y_train)
+                score.append(m.mean_squared_error(X_test, X2_test, y_test))
+            scores_header.append(cv_name)
+            scores.append(np.mean(np.sqrt(score)))
+
+        print(tabulate([scores], scores_header, floatfmt=".3f"))
+        print()
+
+        print(tabulate(kc_vals, ['KC Name', 'Intercept (logit)', 
+                                 'Intercept (prob)', 'Slope', 'Slip'],
+                       floatfmt=".3f"))
+        
+        print()
+        print(tabulate(coef_s, ['Anon Student Id', 'Intercept (logit)',
+                                'Intercept (prob)'],
+                       floatfmt=".3f"))
+
+    else:
+        raise ValueError("Model type not supported")
 
