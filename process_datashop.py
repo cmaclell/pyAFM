@@ -35,6 +35,9 @@ if __name__ == "__main__":
     #parser.add_argument('-param_o', type=argparse.FileType('w'), 
     #                   help="file to output estimated parameters")
 
+    parser.add_argument('-seed',type=int,default=None,
+    					help='the seed used for shuffling in cross validation to ensure comparable folds between runs (default=None).')
+
     args = parser.parse_args()
 
     #if not(args.cv_o or args.pred_o or args.param_o):
@@ -134,8 +137,8 @@ if __name__ == "__main__":
                             invlogit(coef_qint.setdefault(kc, 0.0)), 
                             coef_qslope.setdefault(kc, 0.0)])
 
-        cvs = [('Unstratified CV', KFold(len(y), n_folds=args.nfolds, shuffle=True)),
-              ('Stratified CV', StratifiedKFold(y, n_folds=args.nfolds, shuffle=True)),
+        cvs = [('Unstratified CV', KFold(len(y), n_folds=args.nfolds, shuffle=True, random_state=args.seed)),
+              ('Stratified CV', StratifiedKFold(y, n_folds=args.nfolds, shuffle=True, random_state=args.seed)),
               ('Student CV', LabelKFold(student_label, n_folds=args.nfolds)), 
               ('Item CV', LabelKFold(item_label, n_folds=args.nfolds))]
 
@@ -185,8 +188,8 @@ if __name__ == "__main__":
                             coef_qslope.setdefault(kc, 0.0),
                             coef_qslip.setdefault(kc, 0.0)])
 
-        cvs = [('Unstratified CV', KFold(len(y), n_folds=args.nfolds, shuffle=True)),
-              ('Stratified CV', StratifiedKFold(y, n_folds=args.nfolds, shuffle=True)),
+        cvs = [('Unstratified CV', KFold(len(y), n_folds=args.nfolds, shuffle=True, random_state=args.seed)),
+              ('Stratified CV', StratifiedKFold(y, n_folds=args.nfolds, shuffle=True, random_state=args.seed)),
               ('Student CV', LabelKFold(student_label, n_folds=args.nfolds)), 
               ('Item CV', LabelKFold(item_label, n_folds=args.nfolds))]
 
