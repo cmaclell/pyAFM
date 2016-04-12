@@ -35,8 +35,12 @@ if __name__ == "__main__":
     #parser.add_argument('-param_o', type=argparse.FileType('w'), 
     #                   help="file to output estimated parameters")
 
+
     parser.add_argument('-seed',type=int,default=None,
-    					help='the seed used for shuffling in cross validation to ensure comparable folds between runs (default=None).')
+                        help='the seed used for shuffling in cross validation to ensure comparable folds between runs (default=None).')
+
+    parser.add_argument('-report',choices=['all','cv','kcs','kcs+stu'],default='all',
+                        help='model values to report after fitting (default=all).')
 
     args = parser.parse_args()
 
@@ -154,18 +158,22 @@ if __name__ == "__main__":
             scores_header.append(cv_name)
             scores.append(np.mean(np.sqrt(score)))
 
-        print(tabulate([scores], scores_header, floatfmt=".3f"))
         print()
+        if args.report in ['all','cv']:
+            print(tabulate([scores], scores_header, floatfmt=".3f"))
+            print()
 
-        print(tabulate(kc_vals, ['KC Name', 'Intercept (logit)', 
-                                 'Intercept (prob)', 'Slope'],
-                       floatfmt=".3f"))
-        
-        print()
+        if args.report in ['all','kcs','kcs+stu']:
+            print(tabulate(kc_vals, ['KC Name', 'Intercept (logit)', 
+                                     'Intercept (prob)', 'Slope'],
+                           floatfmt=".3f"))
+            
+            print()
 
-        print(tabulate(coef_s, ['Anon Student Id', 'Intercept (logit)',
-                                'Intercept (prob)'],
-                       floatfmt=".3f"))
+        if args.report in ['all','kcs+stu']:
+            print(tabulate(coef_s, ['Anon Student Id', 'Intercept (logit)',
+                                    'Intercept (prob)'],
+                           floatfmt=".3f"))
 
 
     elif args.m == "AFM+S":
@@ -206,17 +214,23 @@ if __name__ == "__main__":
             scores_header.append(cv_name)
             scores.append(np.mean(np.sqrt(score)))
 
-        print(tabulate([scores], scores_header, floatfmt=".3f"))
         print()
-
-        print(tabulate(kc_vals, ['KC Name', 'Intercept (logit)', 
-                                 'Intercept (prob)', 'Slope', 'Slip'],
-                       floatfmt=".3f"))
         
-        print()
-        print(tabulate(coef_s, ['Anon Student Id', 'Intercept (logit)',
-                                'Intercept (prob)'],
-                       floatfmt=".3f"))
+        if args.report in ['all','cv']:
+            print(tabulate([scores], scores_header, floatfmt=".3f"))
+            print()
+
+        if args.report in ['all','kcs','kcs+stu']:
+            print(tabulate(kc_vals, ['KC Name', 'Intercept (logit)', 
+                                     'Intercept (prob)', 'Slope', 'Slip'],
+                           floatfmt=".3f"))
+            
+            print()
+        
+        if args.report in ['all','kcs+stu']:
+            print(tabulate(coef_s, ['Anon Student Id', 'Intercept (logit)',
+                                    'Intercept (prob)'],
+                           floatfmt=".3f"))
 
     else:
         raise ValueError("Model type not supported")
