@@ -20,9 +20,9 @@ citation of the following paper:
 MacLellan, C.J., Liu, R., Koedinger, K.R. (2015) Accounting for Slipping and
 Other False Negatives in Logistic Models of Student Learning. In O.C. Santos et
 al. (Eds.), Proceedings of the 8th International Conference on Educational Data
-Mining. Madrid, Spain: International Educational Data Mining Society <http://christopia.net/media/publications/maclellan2-2015.pdf>`_.
+Mining. Madrid, Spain: International Educational Data Mining Society [(pdf)](http://christopia.net/media/publications/maclellan2-2015.pdf).
 
-Bibtex entry::
+Bibtex entry:
 
     @inproceedings{afmslip:2015,
     author={MacLellan, C.J. and Liu, R. and Koedinger, K.R.},
