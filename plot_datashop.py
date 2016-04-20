@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
     f = args.student_step_file
 
-    row_ids, kcs, opps, y, stu, student_label, item_label = read_datashop_student_step(args.student_step_file)
+    kcs, opps, y, stu, student_label, item_label = read_datashop_student_step(args.student_step_file)
 
     # Get everything in the right matrix format
     sv = DictVectorizer()

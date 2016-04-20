@@ -24,7 +24,6 @@ def read_datashop_student_step(step_file):
     model = "KC (%s)" % (kcs[modelId])
     opp = "Opportunity (%s)" % (kcs[modelId])
 
-    row_ids = []
     kcs = []
     opps = []
     y = []
@@ -56,11 +55,8 @@ def read_datashop_student_step(step_file):
 
         item = data[header['Problem Name']] + "##" + data[header['Step Name']]
         item_label.append(item)
-
-        row_id = data[header['Row']]
-        row_ids.append(row_id)
     
-    return (row_ids, kcs, opps, y, stu, student_label, item_label)
+    return (kcs, opps, y, stu, student_label, item_label)
 
 if __name__ == "__main__":
 
@@ -78,7 +74,7 @@ if __name__ == "__main__":
                         help='model values to report after fitting (default=all).')
     args = parser.parse_args()
 
-    row_ids, kcs, opps, y, stu, student_label, item_label = read_datashop_student_step(args.student_step_file)
+    kcs, opps, y, stu, student_label, item_label = read_datashop_student_step(args.student_step_file)
 
     sv = DictVectorizer()
     qv = DictVectorizer()
