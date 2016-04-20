@@ -11,9 +11,12 @@ from sklearn.cross_validation import LabelKFold
 from util import invlogit
 from custom_logistic import CustomLogistic
 from bounded_logistic import BoundedLogistic
+from roll_up import transaction_to_student_step
+import pprint
 
 def read_datashop_student_step(step_file):
     header = {v: i for i,v in enumerate(step_file.readline().split('\t'))}
+    pprint.pprint(header)
 
     kcs = [v[4:-1] for v in header if v[0:2] == "KC"]
     kcs.sort()
@@ -22,6 +25,7 @@ def read_datashop_student_step(step_file):
         print("(%i) %s" % (i+1, v))
     modelId = int(input("Which KC model? "))-1
     model = "KC (%s)" % (kcs[modelId])
+    print(model)
     opp = "Opportunity (%s)" % (kcs[modelId])
 
     kcs = []
@@ -72,9 +76,17 @@ if __name__ == "__main__":
                         help='the seed used for shuffling in cross validation to ensure comparable folds between runs (default=None).')
     parser.add_argument('-report',choices=['all','cv','kcs','kcs+stu'],default='all',
                         help='model values to report after fitting (default=all).')
+    parser.add_argument('-rollup',action='store_true',
+                        help='performs a student step rollup of a transaction file before running AFM.')
     args = parser.parse_args()
 
-    kcs, opps, y, stu, student_label, item_label = read_datashop_student_step(args.student_step_file)
+    if args.rollup:
+        ssr_file = transaction_to_student_step(args.student_step_file)
+        ssr_file = open(ssr_file,'r')
+    else:
+        ssr_file = args.student_step_file
+
+    kcs, opps, y, stu, student_label, item_label = read_datashop_student_step(ssr_file)
 
     sv = DictVectorizer()
     qv = DictVectorizer()
