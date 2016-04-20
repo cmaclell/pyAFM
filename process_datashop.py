@@ -59,7 +59,8 @@ def read_datashop_student_step(step_file):
 
         item = data[header['Problem Name']] + "##" + data[header['Step Name']]
         item_label.append(item)
-    
+    pprint.pprint(kcs[:10])
+    pprint.pprint(opps[:10])
     return (kcs, opps, y, stu, student_label, item_label)
 
 if __name__ == "__main__":

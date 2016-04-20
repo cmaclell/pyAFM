@@ -48,7 +48,7 @@ def transaction_to_student_step(datashop_file):
         students[line['anon student id']].append(line)
 
     touched = set()
-    kc_models = [km for km in header if km[:4] == 'KC (' and not (km in touched or touched.add(km))]
+    kc_model_names = [km for km in header if km[:4] == 'KC (' and not (km in touched or touched.add(km))]
     row_count = 0
 
     with open(out_file,'w') as out:
@@ -69,12 +69,15 @@ def transaction_to_student_step(datashop_file):
 
         out.write('\t'.join(new_head))
         
-        for km in kc_models:
+        for km in kc_model_names:
             out.write('\t'+km+'\tOpportunity ('+km[4:])
 
         out.write('\n')
 
-        for stu in students:
+        stu_list = list(students.keys())
+        sorted(stu_list)
+
+        for stu in stu_list:
             transactions = students[stu]
             transactions = sorted(transactions, key=lambda k: k['time'])
 
@@ -138,29 +141,28 @@ def transaction_to_student_step(datashop_file):
                     elif t['outcome'].lower() == 'hint':
                         step_stats['hints'] += 1
 
-                if step_name != last_step:
-                    for field in t:
-                        value = t[field]
-                        if field[:4] == "KC (":
-                            mod = field[4:-1]
-                            if mod not in kc_ops:
-                                kc_ops[mod] = {}
-                            if '~~' in value:
-                                kc_to_write.append(value)
-                                kcs = value.split('~~')
-                                ops_to_write = []
-                                for kc in kcs:
-                                    if kc not in kc_ops[mod]:
-                                        kc_ops[mod][kc] = 0
-                                    kc_ops[mod][kc] += 1
-                                    ops_to_write.append(kc_ops[mod][kc])
-                                kc_to_write.append('~~'.join(ops_to_write))
-                            else:
-                                if value not in kc_ops[mod]:
-                                    kc_ops[mod][value] = 0
-                                kc_ops[mod][value] += 1
-                                kc_to_write.append(value)
-                                kc_to_write.append(str(kc_ops[mod][value]))
+              #  if step_name != last_step:
+                for kc_mod in kc_model_names:
+                    value = t[kc_mod]
+                    mod_name = kc_mod[4:-1]
+                    if mod_name not in kc_ops:
+                        kc_ops[mod_name] = {}
+                    if '~~' in value:
+                        kc_to_write.append(value)
+                        kcs = value.split('~~')
+                        ops_to_write = []
+                        for kc in kcs:
+                            if kc not in kc_ops[mod_name]:
+                                kc_ops[mod_name][kc] = 0
+                            kc_ops[mod_name][kc] += 1
+                            ops_to_write.append(kc_ops[mod_name][kc])
+                        kc_to_write.append('~~'.join(ops_to_write))
+                    else:
+                        if value not in kc_ops[mod_name]:
+                            kc_ops[mod_name][value] = 0
+                        kc_ops[mod_name][value] += 1
+                        kc_to_write.append(value)
+                        kc_to_write.append(str(kc_ops[mod_name][value]))
 
                 last_step = step_name
                 last_prob = problem_name
