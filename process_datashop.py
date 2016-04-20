@@ -46,7 +46,7 @@ def read_datashop_student_step(step_file):
         kcs.append({kc: 1 for kc in kc_labels})
 
         kc_opps = [o for o in data[header[opp]].split("~~") if o != ""]
-        opps.append({kc: int(kc_opps[i]) for i,kc in enumerate(kc_labels)})
+        opps.append({kc: int(kc_opps[i])-1 for i,kc in enumerate(kc_labels)})
 
         if data[header['First Attempt']] == "correct":
             y.append(1)

@@ -68,18 +68,18 @@ if __name__ == "__main__":
     afms.fit(X, X2, y)
     yAFMS = afms.predict_proba(X, X2)
 
-    plt.close('all')
-    
     #plotkcs = ['All Knowledge Components']
-    plotkcs = ['All Knowledge Components'] + list(set([kc for row in kcs for kc in row]))
+    plotkcs = list(set([kc for row in kcs for kc in row])) + ['All Knowledge Components']
 
-    f, subplots = plt.subplots(len(plotkcs))
+    #f, subplots = plt.subplots(len(plotkcs))
     for plot_id, plotkc in enumerate(plotkcs):
 
-        if len(plotkcs) > 1:
-            p = subplots[plot_id]
-        else:
-            p = subplots
+        plt.figure(plot_id+1)
+
+        #if len(plotkcs) > 1:
+        #    p = subplots[plot_id]
+        #else:
+        #    p = subplots
         xs = []
         y1 = []
         y2 = []
@@ -101,13 +101,23 @@ if __name__ == "__main__":
         y2 = [1-v for v in y2]
         y3 = [1-v for v in y3]
 
-        p.plot(x, y1)
-        p.plot(x, y2)
-        p.plot(x, y3)
-        p.set_title(plotkc)
-        #p.xlabel("Opportunities")
-        #p.ylabel("Error")
-        #p.ylim(0,1)
+        human_line, = plt.plot(x, y1, color='red', label="Actual Data")
+        afm_line, = plt.plot(x, y2, color='blue', label="AFM")
+        afms_line, = plt.plot(x, y3, color='green', label="AFM+S")
+        plt.legend(handles=[human_line, afm_line, afms_line])
+        plt.title(plotkc)
+        plt.xlabel("Opportunities")
+        plt.ylabel("Error")
+        plt.ylim(0,1)
+        #plt.show()
+
+        #p.plot(x, y1)
+        #p.plot(x, y2)
+        #p.plot(x, y3)
+        #p.set_title(plotkc)
+        #p.set_xlabel("Opportunities")
+        #p.set_ylabel("Error")
+        #p.set_ylim(0,1)
 
     plt.show()
 
