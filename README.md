@@ -23,6 +23,9 @@ curves predicted by AFM and AFM+S. Similar to process\_datashop.py, it accepts
 student step files in datashop format; e.g., 
 `$ python plot_datashop.py student_step_datashop_export.txt`
 
+For a slightly more detailed example of how to use these scripts see my 
+[blog post](http://christopia.net/blog/modeling-student-learning-in-python).
+
 Citing this Software 
 ====================
 
