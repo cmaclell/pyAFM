@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from custom_logistic import CustomLogistic
 from bounded_logistic import BoundedLogistic
 from process_datashop import read_datashop_student_step
+from roll_up import transaction_to_student_step
 
 def avg_y_by_x(x,y):
     x = np.array(x)
@@ -29,13 +30,20 @@ def avg_y_by_x(x,y):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Process datashop file.')
-    parser.add_argument('student_step_file', type=argparse.FileType('r'),
-                        help="the student step export from datashop")
+    parser.add_argument('-ft', choices=["student_step", "transaction"], 
+                       help='the type of file to load (default="student_step")',
+                        default="student_step")
+    parser.add_argument('student_data', type=argparse.FileType('r'),
+                        help="the student data file in datashop format")
     args = parser.parse_args()
 
-    f = args.student_step_file
+    if args.ft == "transaction":
+        ssr_file = transaction_to_student_step(args.student_data)
+        ssr_file = open(ssr_file,'r')
+    else:
+        ssr_file = args.student_step_file
 
-    kcs, opps, y, stu, student_label, item_label = read_datashop_student_step(args.student_step_file)
+    kcs, opps, y, stu, student_label, item_label = read_datashop_student_step(ssr_file)
 
     # Get everything in the right matrix format
     sv = DictVectorizer()
