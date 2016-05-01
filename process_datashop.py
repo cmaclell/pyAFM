@@ -81,7 +81,7 @@ if __name__ == "__main__":
         ssr_file = transaction_to_student_step(args.student_data)
         ssr_file = open(ssr_file,'r')
     else:
-        ssr_file = args.student_step_file
+        ssr_file = args.student_data
 
     kcs, opps, y, stu, student_label, item_label = read_datashop_student_step(ssr_file)
 

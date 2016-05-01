@@ -183,4 +183,5 @@ def transaction_to_student_step(datashop_file):
             line_to_write.extend(kc_to_write)
             out.write('\t'.join(line_to_write)+'\n')
 
+    print('transaction file rolled up into:',out_file)
     return out_file
