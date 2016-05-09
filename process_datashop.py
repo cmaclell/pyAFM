@@ -14,7 +14,7 @@ from bounded_logistic import BoundedLogistic
 from roll_up import transaction_to_student_step
 
 def read_datashop_student_step(step_file):
-    header = {v: i for i,v in enumerate(step_file.readline().split('\t'))}
+    header = {v: i for i,v in enumerate(step_file.readline().rstrip().split('\t'))}
 
     kcs = [v[4:-1] for v in header if v[0:2] == "KC"]
     kcs.sort()
@@ -33,7 +33,7 @@ def read_datashop_student_step(step_file):
     item_label = []
 
     for line in step_file:
-        data = line.split('\t')
+        data = line.rstrip().split('\t')
 
         kc_labels = [kc for kc in data[header[model]].split("~~") if kc != ""]
 

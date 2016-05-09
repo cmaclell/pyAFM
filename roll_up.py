@@ -147,7 +147,7 @@ def transaction_to_student_step(datashop_file):
                     step_end_time = t['time']
                     first_transaction_time = t['time']
                     first_attempt = t['outcome'].lower()
-                    correct_transaction_time = None
+                    correct_transaction_time = ""
                     corrects = 0
                     incorrects = 0
                     hints = 0
