@@ -12,12 +12,13 @@ from custom_logistic import CustomLogistic
 from bounded_logistic import BoundedLogistic
 
 def read_datashop_student_step(step_file, kc_model):
-    header = {v: i for i,v in enumerate(step_file.readline().rstrip().split('\t'))}
+    headers = step_file.readline().rstrip().split('\t')
+    header = {v: i for i,v in enumerate(headers)}
 
     model = "KC (%s)" % kc_model
     opp = "Opportunity (%s)" % kc_model
 
-    original_headers = [h for h in header 
+    original_headers = [h for h in headers 
                         if (("Predicted Error Rate" not in h) and 
                             (h == model or "KC (" not in h) and
                             (h == opp or "Opportunity (" not in h))]
