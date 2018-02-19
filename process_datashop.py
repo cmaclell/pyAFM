@@ -17,6 +17,7 @@ from custom_logistic import CustomLogistic
 from bounded_logistic import BoundedLogistic
 from roll_up import transaction_to_student_step
 from models import afm
+from models import online_afm
 from models import afms
 
 def read_datashop_student_step(step_file, model_id=None):
@@ -95,8 +96,10 @@ if __name__ == "__main__":
 
     if args.m == "AFM":
 
-        scores, kc_vals, coef_s = afm(kcs, opps, y, stu, 
-                                      student_label, item_label, args.nfolds, args.seed)
+        scores, kc_vals, coef_s = online_afm(kcs, opps, y, stu, 
+                                      student_label, item_label)
+        # scores, kc_vals, coef_s = afm(kcs, opps, y, stu, 
+        #                               student_label, item_label, args.nfolds, args.seed)
         print()
         if args.report in ['all', 'cv']:
             print(tabulate([scores], ['Unstratified CV', 'Stratified CV', 'Student CV', 'Item CV'],
