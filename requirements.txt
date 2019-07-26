@@ -1,0 +1,5 @@
+tabulate
+numpy
+scipy
+sklearn
+matplotlib

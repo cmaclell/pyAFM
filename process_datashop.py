@@ -5,22 +5,15 @@ from __future__ import division
 import argparse
 
 from tabulate import tabulate
-import numpy as np
-from scipy.sparse import hstack
-from sklearn.feature_extraction import DictVectorizer
-from sklearn.cross_validation import KFold
-from sklearn.cross_validation import StratifiedKFold
-from sklearn.cross_validation import LabelKFold
 
-from util import invlogit
-from custom_logistic import CustomLogistic
-from bounded_logistic import BoundedLogistic
 from roll_up import transaction_to_student_step
 from models import afm
 from models import afms
 
+
 def read_datashop_student_step(step_file, model_id=None):
-    header = {v: i for i,v in enumerate(step_file.readline().rstrip().split('\t'))}
+    header = {v: i for i, v in enumerate(
+        step_file.readline().rstrip().split('\t'))}
 
     kc_mods = [v[4:-1] for v in header if v[0:2] == "KC"]
     kc_mods.sort()
@@ -50,7 +43,7 @@ def read_datashop_student_step(step_file, model_id=None):
         kcs.append({kc: 1 for kc in kc_labels})
 
         kc_opps = [o for o in data[header[opp]].split("~~") if o != ""]
-        opps.append({kc: int(kc_opps[i])-1 for i,kc in enumerate(kc_labels)})
+        opps.append({kc: int(kc_opps[i])-1 for i, kc in enumerate(kc_labels)})
 
         if data[header['First Attempt']] == "correct":
             y.append(1)
@@ -64,6 +57,7 @@ def read_datashop_student_step(step_file, model_id=None):
         item = data[header['Problem Name']] + "##" + data[header['Step Name']]
         item_label.append(item)
     return (kcs, opps, y, stu, student_label, item_label)
+
 
 if __name__ == "__main__":
 
@@ -87,15 +81,16 @@ if __name__ == "__main__":
 
     if args.ft == "transaction":
         ssr_file = transaction_to_student_step(args.student_data)
-        ssr_file = open(ssr_file,'r')
+        ssr_file = open(ssr_file, 'r')
     else:
         ssr_file = args.student_data
 
-    kcs, opps, y, stu, student_label, item_label = read_datashop_student_step(ssr_file)
+    kcs, opps, y, stu, student_label, item_label = read_datashop_student_step(
+        ssr_file)
 
     if args.m == "AFM":
 
-        scores, kc_vals, coef_s = afm(kcs, opps, y, stu, 
+        scores, kc_vals, coef_s = afm(kcs, opps, y, stu,
                                       student_label, item_label, args.nfolds, args.seed)
         print()
         if args.report in ['all', 'cv']:
@@ -116,8 +111,8 @@ if __name__ == "__main__":
 
     elif args.m == "AFM+S":
 
-        scores, kc_vals, coef_s = afms(kcs, opps, y, stu, 
-                                      student_label, item_label, args.nfolds, args.seed)
+        scores, kc_vals, coef_s = afms(kcs, opps, y, stu,
+                                       student_label, item_label, args.nfolds, args.seed)
         print()
         if args.report in ['all', 'cv']:
             print(tabulate([scores], ['Unstratified CV', 'Stratified CV', 'Student CV', 'Item CV'],

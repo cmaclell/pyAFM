@@ -14,7 +14,8 @@ from bounded_logistic import BoundedLogistic
 from process_datashop import read_datashop_student_step
 from roll_up import transaction_to_student_step
 
-def avg_y_by_x(x,y):
+
+def avg_y_by_x(x, y):
     x = np.array(x)
     y = np.array(y)
 
@@ -24,30 +25,38 @@ def avg_y_by_x(x,y):
     yv = []
 
     for v in xs:
-        ys = [y[i] for i,e in enumerate(x) if e == v]
+        ys = [y[i] for i, e in enumerate(x) if e == v]
         if len(ys) > 0:
             xv.append(v)
             yv.append(sum(ys) / len(ys))
 
     return xv, yv
 
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Process datashop file.')
-    parser.add_argument('-ft', choices=["student_step", "transaction"], 
-                       help='the type of file to load (default="student_step")',
-                        default="student_step")
+    parser.add_argument('-ft', choices=["student_step", "transaction"],
+                        help='the type of file to load (default="student_'
+                        'step")', default="student_step")
+    parser.add_argument('-m', choices=["AFM", "AFM+S", "both"],
+                        help='the type of model to plot',
+                        default="both")
+    parser.add_argument('-p', choices=["overall", "individual_kcs", "both"],
+                        help='the type of graph to generate',
+                        default="overall")
     parser.add_argument('student_data', type=argparse.FileType('r'),
                         help="the student data file in datashop format")
     args = parser.parse_args()
 
     if args.ft == "transaction":
         ssr_file = transaction_to_student_step(args.student_data)
-        ssr_file = open(ssr_file,'r')
+        ssr_file = open(ssr_file, 'r')
     else:
         ssr_file = args.student_data
 
-    kcs, opps, y, stu, student_label, item_label = read_datashop_student_step(ssr_file)
+    kcs, opps, y, stu, student_label, item_label = read_datashop_student_step(
+        ssr_file)
 
     # Get everything in the right matrix format
     sv = DictVectorizer()
@@ -60,15 +69,15 @@ if __name__ == "__main__":
     y = np.array(y)
 
     # Regularize the student intercepts
-    l2 = [1.0 for i in range(S.shape[1])] 
-    l2 += [0.0 for i in range(Q.shape[1])] 
+    l2 = [1.0 for i in range(S.shape[1])]
+    l2 += [0.0 for i in range(Q.shape[1])]
     l2 += [0.0 for i in range(O.shape[1])]
 
     # Bound the learning rates to be positive
-    bounds = [(None, None) for i in range(S.shape[1])] 
-    bounds += [(None, None) for i in range(Q.shape[1])] 
+    bounds = [(None, None) for i in range(S.shape[1])]
+    bounds += [(None, None) for i in range(Q.shape[1])]
     bounds += [(0, None) for i in range(O.shape[1])]
-    
+
     X = X.toarray()
     X2 = Q.toarray()
 
@@ -80,17 +89,21 @@ if __name__ == "__main__":
     afms.fit(X, X2, y)
     yAFMS = afms.predict_proba(X, X2)
 
-    #plotkcs = ['All Knowledge Components']
-    plotkcs = list(set([kc for row in kcs for kc in row])) + ['All Knowledge Components']
+    plotkcs = []
 
-    #f, subplots = plt.subplots(len(plotkcs))
+    if args.p == "overall" or args.p == "both":
+        plotkcs += ['All Knowledge Components']
+    if args.p == "individual_kcs" or args.p == "both":
+        plotkcs += list(set([kc for row in kcs for kc in row]))
+
+    # f, subplots = plt.subplots(len(plotkcs))
     for plot_id, plotkc in enumerate(plotkcs):
 
         plt.figure(plot_id+1)
 
-        #if len(plotkcs) > 1:
+        # if len(plotkcs) > 1:
         #    p = subplots[plot_id]
-        #else:
+        # else:
         #    p = subplots
         xs = []
         y1 = []
@@ -114,25 +127,27 @@ if __name__ == "__main__":
         y3 = [1-v for v in y3]
 
         human_line, = plt.plot(x, y1, color='red', label="Actual Data")
-        afm_line, = plt.plot(x, y2, color='blue', label="AFM")
-        afms_line, = plt.plot(x, y3, color='green', label="AFM+S")
-        plt.legend(handles=[human_line, afm_line, afms_line])
+        lines = [human_line]
+
+        if args.m == "afm" or args.m == "both":
+            afm_line, = plt.plot(x, y2, color='blue', label="AFM")
+            lines.append(afm_line)
+        if args.m == "afm+s" or args.m == "both":
+            afms_line, = plt.plot(x, y3, color='green', label="AFM+S")
+            lines.append(afms_line)
+        plt.legend(handles=lines)
         plt.title(plotkc)
         plt.xlabel("Opportunities")
         plt.ylabel("Error")
-        plt.ylim(0,1)
-        #plt.show()
+        plt.ylim(0, 1)
+        # plt.show()
 
-        #p.plot(x, y1)
-        #p.plot(x, y2)
-        #p.plot(x, y3)
-        #p.set_title(plotkc)
-        #p.set_xlabel("Opportunities")
-        #p.set_ylabel("Error")
-        #p.set_ylim(0,1)
+        # p.plot(x, y1)
+        # p.plot(x, y2)
+        # p.plot(x, y3)
+        # p.set_title(plotkc)
+        # p.set_xlabel("Opportunities")
+        # p.set_ylabel("Error")
+        # p.set_ylim(0,1)
 
     plt.show()
-
-        
-
-

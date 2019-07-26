@@ -10,18 +10,20 @@ from __future__ import division
 import numpy as np
 from scipy.sparse import hstack
 from sklearn.feature_extraction import DictVectorizer
-from sklearn.cross_validation import KFold
-from sklearn.cross_validation import StratifiedKFold
-from sklearn.cross_validation import LabelKFold
+from sklearn.model_selection import KFold
+from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import GroupKFold
 
 from util import invlogit
 from custom_logistic import CustomLogistic
 from bounded_logistic import BoundedLogistic
 
 
-def afm(kcs, opps, actuals, stu, student_label, item_label, nfolds=3, seed=None):
+def afm(kcs, opps, actuals, stu, student_label, item_label, nfolds=3,
+        seed=None):
     """
-    Executes AFM on the provided data and returns model fits and parameter estimates
+    Executes AFM on the provided data and returns model fits and parameter
+    estimates
     """
     sv = DictVectorizer()
     qv = DictVectorizer()
@@ -34,12 +36,12 @@ def afm(kcs, opps, actuals, stu, student_label, item_label, nfolds=3, seed=None)
     X = hstack((S, Q, O))
     y = np.array(actuals)
 
-    l2 = [1.0 for i in range(S.shape[1])] 
-    l2 += [0.0 for i in range(Q.shape[1])] 
+    l2 = [1.0 for i in range(S.shape[1])]
+    l2 += [0.0 for i in range(Q.shape[1])]
     l2 += [0.0 for i in range(O.shape[1])]
 
-    bounds = [(None, None) for i in range(S.shape[1])] 
-    bounds += [(None, None) for i in range(Q.shape[1])] 
+    bounds = [(None, None) for i in range(S.shape[1])]
+    bounds += [(None, None) for i in range(Q.shape[1])]
     bounds += [(0, None) for i in range(O.shape[1])]
 
     X = X.toarray()
@@ -49,10 +51,11 @@ def afm(kcs, opps, actuals, stu, student_label, item_label, nfolds=3, seed=None)
     model.fit(X, y)
 
     coef_s = model.coef_[0:S.shape[1]]
-    coef_s = [[k, v, invlogit(v)] for k, v in sv.inverse_transform([coef_s])[0].items()]
+    coef_s = [[k, v, invlogit(v)]
+              for k, v in sv.inverse_transform([coef_s])[0].items()]
     coef_q = model.coef_[S.shape[1]:S.shape[1]+Q.shape[1]]
     coef_qint = qv.inverse_transform([coef_q])[0]
-    coef_o = model.coef_[S.shape[1]+Q.shape[1]:S.shape[1]+Q.shape[1]+O.shape[1]]
+    coef_o = model.coef_[S.shape[1]+Q.shape[1]                         :S.shape[1]+Q.shape[1]+O.shape[1]]
     coef_qslope = ov.inverse_transform([coef_o])[0]
 
     kc_vals = []
@@ -63,10 +66,11 @@ def afm(kcs, opps, actuals, stu, student_label, item_label, nfolds=3, seed=None)
                         invlogit(coef_qint.setdefault(kc, 0.0)),
                         coef_qslope.setdefault(kc, 0.0)])
 
-    cvs = [KFold(len(y), n_folds=nfolds, shuffle=True, random_state=seed),
-           StratifiedKFold(y, n_folds=nfolds, shuffle=True, random_state=seed),
-           LabelKFold(student_label, n_folds=nfolds),
-           LabelKFold(item_label, n_folds=nfolds)]
+    cvs = [KFold(n_splits=nfolds, shuffle=True, random_state=seed).split(X),
+           StratifiedKFold(n_splits=nfolds, shuffle=True,
+                           random_state=seed).split(X, y),
+           GroupKFold(n_splits=nfolds).split(X, y, student_label),
+           GroupKFold(n_splits=nfolds).split(X, y, item_label)]
 
     scores = []
     for cv in cvs:
@@ -80,7 +84,8 @@ def afm(kcs, opps, actuals, stu, student_label, item_label, nfolds=3, seed=None)
 
     return scores, kc_vals, coef_s
 
-def afms (kcs, opps, actuals, stu, student_label, item_label, nfolds=3, seed=None):
+
+def afms(kcs, opps, actuals, stu, student_label, item_label, nfolds=3, seed=None):
     """
     Executes AFM+S on the provided data and returns model fits and parameter estimates
     """
@@ -109,13 +114,14 @@ def afms (kcs, opps, actuals, stu, student_label, item_label, nfolds=3, seed=Non
     model = BoundedLogistic(first_bounds=bounds, first_l2=l2)
     model.fit(X, X2, y)
     coef_s = model.coef1_[0:S.shape[1]]
-    coef_s = [[k, v, invlogit(v)] for k, v in sv.inverse_transform([coef_s])[0].items()]
+    coef_s = [[k, v, invlogit(v)]
+              for k, v in sv.inverse_transform([coef_s])[0].items()]
     coef_q = model.coef1_[S.shape[1]:S.shape[1]+Q.shape[1]]
     coef_qint = qv.inverse_transform([coef_q])[0]
-    coef_o = model.coef1_[S.shape[1]+Q.shape[1]:S.shape[1]+Q.shape[1]+O.shape[1]]
+    coef_o = model.coef1_[S.shape[1]+Q.shape[1]                          :S.shape[1]+Q.shape[1]+O.shape[1]]
     coef_qslope = ov.inverse_transform([coef_o])[0]
     coef_qslip = qv.inverse_transform([model.coef2_])[0]
-    
+
     kc_vals = []
     all_kcs = set(coef_qint).union(set(coef_qslope)).union(set(coef_qslip))
     for kc in all_kcs:
@@ -127,8 +133,8 @@ def afms (kcs, opps, actuals, stu, student_label, item_label, nfolds=3, seed=Non
 
     cvs = [KFold(len(y), n_folds=nfolds, shuffle=True, random_state=seed),
            StratifiedKFold(y, n_folds=nfolds, shuffle=True, random_state=seed),
-           LabelKFold(student_label, n_folds=nfolds),
-           LabelKFold(item_label, n_folds=nfolds)]
+           GroupKFold(student_label, n_folds=nfolds),
+           GroupKFold(item_label, n_folds=nfolds)]
 
     # scores_header = []
     scores = []
