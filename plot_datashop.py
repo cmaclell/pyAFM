@@ -129,10 +129,10 @@ if __name__ == "__main__":
         human_line, = plt.plot(x, y1, color='red', label="Actual Data")
         lines = [human_line]
 
-        if args.m == "afm" or args.m == "both":
+        if args.m == "AFM" or args.m == "both":
             afm_line, = plt.plot(x, y2, color='blue', label="AFM")
             lines.append(afm_line)
-        if args.m == "afm+s" or args.m == "both":
+        if args.m == "AFM+S" or args.m == "both":
             afms_line, = plt.plot(x, y3, color='green', label="AFM+S")
             lines.append(afms_line)
         plt.legend(handles=lines)
