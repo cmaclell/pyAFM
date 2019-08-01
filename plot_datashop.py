@@ -13,23 +13,11 @@ from custom_logistic import CustomLogistic
 from bounded_logistic import BoundedLogistic
 from process_datashop import read_datashop_student_step
 from roll_up import transaction_to_student_step
+from util import avg_y_by_x
+from util import opps_to_vecs
+from models import afm
+from models import afms
 
-def avg_y_by_x(x,y):
-    x = np.array(x)
-    y = np.array(y)
-
-    xs = sorted(list(set(x)))
-
-    xv = []
-    yv = []
-
-    for v in xs:
-        ys = [y[i] for i,e in enumerate(x) if e == v]
-        if len(ys) > 0:
-            xv.append(v)
-            yv.append(sum(ys) / len(ys))
-
-    return xv, yv
 
 if __name__ == "__main__":
 
@@ -48,37 +36,43 @@ if __name__ == "__main__":
         ssr_file = args.student_data
 
     kcs, opps, y, stu, student_label, item_label = read_datashop_student_step(ssr_file)
+    X, y, bounds, l2, X2 = opps_to_vecs(kcs, opps, y, stu)
 
-    # Get everything in the right matrix format
-    sv = DictVectorizer()
-    qv = DictVectorizer()
-    ov = DictVectorizer()
-    S = sv.fit_transform(stu)
-    Q = qv.fit_transform(kcs)
-    O = ov.fit_transform(opps)
-    X = hstack((S, Q, O))
-    y = np.array(y)
+    _, _, _, afm_mod = afm(kcs,opps,y,stu,student_label,item_label)
+    yAFM = afm_mod.predict_proba(X)
 
-    # Regularize the student intercepts
-    l2 = [1.0 for i in range(S.shape[1])] 
-    l2 += [0.0 for i in range(Q.shape[1])] 
-    l2 += [0.0 for i in range(O.shape[1])]
+    _, _, _, afms_mod = afms(kcs,opps,y,stu,student_label,item_label)
+    yAFMS = afms_mod.predict_proba(X, X2)
+    # # Get everything in the right matrix format
+    # sv = DictVectorizer()
+    # qv = DictVectorizer()
+    # ov = DictVectorizer()
+    # S = sv.fit_transform(stu)
+    # Q = qv.fit_transform(kcs)
+    # O = ov.fit_transform(opps)
+    # X = hstack((S, Q, O))
+    # y = np.array(y)
 
-    # Bound the learning rates to be positive
-    bounds = [(None, None) for i in range(S.shape[1])] 
-    bounds += [(None, None) for i in range(Q.shape[1])] 
-    bounds += [(0, None) for i in range(O.shape[1])]
+    # # Regularize the student intercepts
+    # l2 = [1.0 for i in range(S.shape[1])] 
+    # l2 += [0.0 for i in range(Q.shape[1])] 
+    # l2 += [0.0 for i in range(O.shape[1])]
+
+    # # Bound the learning rates to be positive
+    # bounds = [(None, None) for i in range(S.shape[1])] 
+    # bounds += [(None, None) for i in range(Q.shape[1])] 
+    # bounds += [(0, None) for i in range(O.shape[1])]
     
-    X = X.toarray()
-    X2 = Q.toarray()
+    # X = X.toarray()
+    # X2 = Q.toarray()
 
-    afm = CustomLogistic(bounds=bounds, l2=l2, fit_intercept=False)
-    afm.fit(X, y)
-    yAFM = afm.predict_proba(X)
+    # afm = CustomLogistic(bounds=bounds, l2=l2, fit_intercept=False)
+    # afm.fit(X, y)
+    # yAFM = afm.predict_proba(X)
 
-    afms = BoundedLogistic(first_bounds=bounds, first_l2=l2)
-    afms.fit(X, X2, y)
-    yAFMS = afms.predict_proba(X, X2)
+    # afms = BoundedLogistic(first_bounds=bounds, first_l2=l2)
+    # afms.fit(X, X2, y)
+    # yAFMS = afms.predict_proba(X, X2)
 
     #plotkcs = ['All Knowledge Components']
     plotkcs = list(set([kc for row in kcs for kc in row])) + ['All Knowledge Components']

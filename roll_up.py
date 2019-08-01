@@ -27,7 +27,18 @@ def transaction_to_student_step(datashop_file):
                 continue
             else:
                 h = h.lower()
-                line[h] = row[i]
+                try:
+                    line[h] = row[i]
+                except:
+                    line[h] = ''
+                    # from pprint import pprint
+                    # print('LINE')
+                    # pprint(line)
+                    # print('ROW')
+                    # pprint(row)
+                    # print('HEADER')
+                    # pprint(header)
+                    # raise
 
         if 'step name' in line:
             pass

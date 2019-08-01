@@ -95,7 +95,7 @@ if __name__ == "__main__":
 
     if args.m == "AFM":
 
-        scores, kc_vals, coef_s = afm(kcs, opps, y, stu, 
+        scores, kc_vals, coef_s, _ = afm(kcs, opps, y, stu, 
                                       student_label, item_label, args.nfolds, args.seed)
         print()
         if args.report in ['all', 'cv']:
@@ -116,7 +116,7 @@ if __name__ == "__main__":
 
     elif args.m == "AFM+S":
 
-        scores, kc_vals, coef_s = afms(kcs, opps, y, stu, 
+        scores, kc_vals, coef_s, _ = afms(kcs, opps, y, stu, 
                                       student_label, item_label, args.nfolds, args.seed)
         print()
         if args.report in ['all', 'cv']:

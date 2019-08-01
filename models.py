@@ -15,6 +15,7 @@ from sklearn.cross_validation import StratifiedKFold
 from sklearn.cross_validation import LabelKFold
 
 from util import invlogit
+from util import opps_to_vecs
 from custom_logistic import CustomLogistic
 from bounded_logistic import BoundedLogistic
 
@@ -78,7 +79,7 @@ def afm(kcs, opps, actuals, stu, student_label, item_label, nfolds=3, seed=None)
             score.append(model.mean_squared_error(X_test, y_test))
         scores.append(np.mean(np.sqrt(score)))
 
-    return scores, kc_vals, coef_s
+    return scores, kc_vals, coef_s, model
 
 def afms (kcs, opps, actuals, stu, student_label, item_label, nfolds=3, seed=None):
     """
@@ -143,4 +144,4 @@ def afms (kcs, opps, actuals, stu, student_label, item_label, nfolds=3, seed=Non
         # scores_header.append(cv_name)
         scores.append(np.mean(np.sqrt(score)))
 
-    return scores, kc_vals, coef_s
+    return scores, kc_vals, coef_s, model
