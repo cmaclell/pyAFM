@@ -8,9 +8,9 @@ from tabulate import tabulate
 import numpy as np
 from scipy.sparse import hstack
 from sklearn.feature_extraction import DictVectorizer
-from sklearn.cross_validation import KFold
-from sklearn.cross_validation import StratifiedKFold
-from sklearn.cross_validation import LabelKFold
+from sklearn.model_selection import KFold
+from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import LabelKFold
 
 from util import invlogit
 from custom_logistic import CustomLogistic
