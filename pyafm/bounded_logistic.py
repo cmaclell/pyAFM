@@ -10,7 +10,7 @@ from sklearn.utils.validation import check_X_y
 from sklearn.utils.validation import check_array
 from scipy.optimize import minimize
 
-from util import invlogit_vect
+from pyafm.util import invlogit_vect
 
 class BoundedLogistic(BaseEstimator):
 

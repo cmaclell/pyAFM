@@ -6,9 +6,9 @@ import argparse
 
 from tabulate import tabulate
 
-from roll_up import transaction_to_student_step
-from models import afm
-from models import afms
+from pyafm.roll_up import transaction_to_student_step
+from pyafm.models import afm
+from pyafm.models import afms
 
 
 def read_datashop_student_step(step_file, model_id=None):
@@ -19,9 +19,12 @@ def read_datashop_student_step(step_file, model_id=None):
     kc_mods.sort()
 
     if model_id is None:
+        print()
+        print('Found these KC models:')
         for i, val in enumerate(kc_mods):
-            print("(%i) %s" % (i+1, val))
-        model_id = int(input("Which KC model? "))-1
+            print("  (%i) %s" % (i+1, val))
+        print()
+        model_id = int(input("Enter the number of which one you want to use: "))-1
     model = "KC (%s)" % (kc_mods[model_id])
     opp = "Opportunity (%s)" % (kc_mods[model_id])
 
@@ -59,8 +62,7 @@ def read_datashop_student_step(step_file, model_id=None):
     return (kcs, opps, y, stu, student_label, item_label)
 
 
-if __name__ == "__main__":
-
+def main():
     parser = argparse.ArgumentParser(description='Process datashop file.')
     parser.add_argument('-ft', choices=["student_step", "transaction"],
                         help='the type of file to load (default="student_step")',
@@ -132,3 +134,7 @@ if __name__ == "__main__":
 
     else:
         raise ValueError("Model type not supported")
+
+
+if __name__ == "__main__":
+    main()
