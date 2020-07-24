@@ -8,8 +8,8 @@ import numpy as np
 from scipy.sparse import hstack
 from sklearn.feature_extraction import DictVectorizer
 
-from custom_logistic import CustomLogistic
-from bounded_logistic import BoundedLogistic
+from pyafm.custom_logistic import CustomLogistic
+from pyafm.bounded_logistic import BoundedLogistic
 
 def read_datashop_student_step(step_file, kc_model):
     headers = step_file.readline().rstrip().split('\t')

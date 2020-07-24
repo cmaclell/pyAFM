@@ -12,8 +12,8 @@ from sklearn.utils.validation import check_array
 
 from scipy.optimize import minimize
 
-from util import log_one_plus_exp_vect
-from util import invlogit_vect
+from pyafm.util import log_one_plus_exp_vect
+from pyafm.util import invlogit_vect
 
 class CustomLogistic(BaseEstimator, ClassifierMixin):
 

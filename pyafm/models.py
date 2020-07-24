@@ -14,9 +14,9 @@ from sklearn.model_selection import KFold
 from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import GroupKFold
 
-from util import invlogit
-from custom_logistic import CustomLogistic
-from bounded_logistic import BoundedLogistic
+from pyafm.util import invlogit
+from pyafm.custom_logistic import CustomLogistic
+from pyafm.bounded_logistic import BoundedLogistic
 
 
 def afm(kcs, opps, actuals, stu, student_label, item_label, nfolds=3,
@@ -131,10 +131,16 @@ def afms(kcs, opps, actuals, stu, student_label, item_label, nfolds=3, seed=None
                         coef_qslope.setdefault(kc, 0.0),
                         coef_qslip.setdefault(kc, 0.0)])
 
-    cvs = [KFold(len(y), n_folds=nfolds, shuffle=True, random_state=seed),
-           StratifiedKFold(y, n_folds=nfolds, shuffle=True, random_state=seed),
-           GroupKFold(student_label, n_folds=nfolds),
-           GroupKFold(item_label, n_folds=nfolds)]
+    # cvs = [KFold(len(y), n_splits=nfolds, shuffle=True, random_state=seed),
+    #        StratifiedKFold(y, n_splits=nfolds, shuffle=True, random_state=seed),
+    #        GroupKFold(student_label, n_splits=nfolds),
+    #        GroupKFold(item_label, n_splits=nfolds)]
+
+    cvs = [KFold(n_splits=nfolds, shuffle=True, random_state=seed).split(X),
+           StratifiedKFold(n_splits=nfolds, shuffle=True,
+                           random_state=seed).split(X, y),
+           GroupKFold(n_splits=nfolds).split(X, y, student_label),
+           GroupKFold(n_splits=nfolds).split(X, y, item_label)]
 
     # scores_header = []
     scores = []

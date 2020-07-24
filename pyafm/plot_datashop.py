@@ -9,10 +9,10 @@ from scipy.sparse import hstack
 from sklearn.feature_extraction import DictVectorizer
 import matplotlib.pyplot as plt
 
-from custom_logistic import CustomLogistic
-from bounded_logistic import BoundedLogistic
-from process_datashop import read_datashop_student_step
-from roll_up import transaction_to_student_step
+from pyafm.custom_logistic import CustomLogistic
+from pyafm.bounded_logistic import BoundedLogistic
+from pyafm.process_datashop import read_datashop_student_step
+from pyafm.roll_up import transaction_to_student_step
 
 
 def avg_y_by_x(x, y):
@@ -32,9 +32,7 @@ def avg_y_by_x(x, y):
 
     return xv, yv
 
-
-if __name__ == "__main__":
-
+def main():
     parser = argparse.ArgumentParser(description='Process datashop file.')
     parser.add_argument('-ft', choices=["student_step", "transaction"],
                         help='the type of file to load (default="student_'
@@ -151,3 +149,7 @@ if __name__ == "__main__":
         # p.set_ylim(0,1)
 
     plt.show()
+
+
+if __name__ == "__main__":
+    main()
