@@ -8,6 +8,7 @@ import numpy as np
 from scipy.sparse import hstack
 from sklearn.feature_extraction import DictVectorizer
 import matplotlib.pyplot as plt
+from scipy.stats import beta
 
 from pyafm.custom_logistic import CustomLogistic
 from pyafm.bounded_logistic import BoundedLogistic
@@ -23,6 +24,8 @@ def avg_y_by_x(x, y):
 
     xv = []
     yv = []
+    lcb = []
+    ucb = []
 
     for v in xs:
         ys = [y[i] for i, e in enumerate(x) if e == v]
@@ -30,7 +33,19 @@ def avg_y_by_x(x, y):
             xv.append(v)
             yv.append(sum(ys) / len(ys))
 
-    return xv, yv
+            unique, counts = np.unique(ys, return_counts=True)
+            counts = dict(zip(unique, counts))
+
+            if 0 not in counts:
+                counts[0] = 0
+            if 1 not in counts:
+                counts[1] = 0
+            
+            ci = beta.interval(0.95, 0.5 + counts[0], 0.5 + counts[1])
+            lcb.append(ci[0])
+            ucb.append(ci[1])
+
+    return xv, yv, lcb, ucb
 
 def main():
     parser = argparse.ArgumentParser(description='Process datashop file.')
@@ -116,15 +131,17 @@ def main():
                 y2.append(yAFM[i])
                 y3.append(yAFMS[i])
 
-        x, y1 = avg_y_by_x(xs, y1)
-        x, y2 = avg_y_by_x(xs, y2)
-        x, y3 = avg_y_by_x(xs, y3)
+        x, y1, lcb, ucb = avg_y_by_x(xs, y1)
+        x, y2, _, _ = avg_y_by_x(xs, y2)
+        x, y3, _, _ = avg_y_by_x(xs, y3)
 
         y1 = [1-v for v in y1]
         y2 = [1-v for v in y2]
         y3 = [1-v for v in y3]
 
         human_line, = plt.plot(x, y1, color='red', label="Actual Data")
+        plt.fill_between(x, lcb, ucb, color='red', alpha=.1)
+        
         lines = [human_line]
 
         if args.m == "AFM" or args.m == "both":
