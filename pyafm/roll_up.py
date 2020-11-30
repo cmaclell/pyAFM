@@ -4,6 +4,93 @@ from __future__ import absolute_import
 from __future__ import division
 import csv
 
+
+def write_problem(steps, problem_views, kc_ops, row_count, kc_model_names,
+                  out):
+
+    # variable to store rolled up steps
+    rollup = []
+
+    for s in steps:
+        # sort transactions within a step by time (should be sorted already,
+        # but just in case)
+        steps[s].sort(key=lambda x: x['time'])
+
+        # update variables for first attempt
+        student = steps[s][0]['anon student id']
+        problem_name = steps[s][0]['problem name']
+        step_name = s
+        step_start_time = steps[s][0]['time']
+        first_transaction_time = steps[s][0]['time']
+        correct_transaction_time = ""
+        step_end_time = steps[s][0]['time']
+        first_attempt = steps[s][0]['outcome'].lower()
+        incorrects = 0
+        corrects = 0
+        hints = 0
+        kc_sets = {kc_mod: set() for kc_mod in kc_model_names}
+
+        # update variables for non-first attempt transactions
+        for t in steps[s]:
+            step_end_time = t['time']
+            if t['outcome'].lower() == 'correct':
+                correct_transaction_time = t['time']
+                corrects += 1
+            elif t['outcome'].lower() == 'incorrect':
+                incorrects += 1
+            elif t['outcome'].lower() == 'hint':
+                hints += 1
+
+            for kc_mod in kc_model_names:
+                for kc in t[kc_mod].split("~~"):
+                    kc_sets[kc_mod].add(kc)
+
+        # for each rolled up step, we need to increment the KC counts.
+        kc_to_write = []
+        for kc_mod in kc_model_names:
+            model_name = kc_mod[4:-1]
+            kcs = list(kc_sets[kc_mod])
+            kc_to_write.append("~~".join(kcs))
+
+            if model_name not in kc_ops:
+                kc_ops[model_name] = {}
+
+            ops = []
+            for kc in kcs:
+                if kc not in kc_ops[model_name]:
+                    kc_ops[model_name][kc] = 0
+                kc_ops[model_name][kc] += 1
+                ops.append(str(kc_ops[model_name][kc]))
+            kc_to_write.append("~~".join(ops))
+
+        # add rolled up step to rollup
+        rolled_up_step = [str(row_count),
+                          student,
+                          problem_name,
+                          str(problem_views[problem_name]),
+                          step_name,
+                          step_start_time,
+                          first_transaction_time,
+                          correct_transaction_time,
+                          step_end_time,
+                          first_attempt,
+                          str(incorrects),
+                          str(corrects),
+                          str(hints)]
+        rolled_up_step.extend(kc_to_write)
+
+        row_count += 1
+        rollup.append(rolled_up_step)
+
+    # sort the rolled up steps by step start time
+    rollup.sort(key=lambda x: x[5])
+
+    for line_to_write in rollup:
+        out.write('\t'.join(line_to_write)+'\n')
+
+    return row_count
+
+
 def transaction_to_student_step(datashop_file):
     out_file = datashop_file.name[:-4]+'-rollup.txt'
     students = {}
@@ -13,7 +100,7 @@ def transaction_to_student_step(datashop_file):
         if header is None:
             header = row
             continue
-        
+
         line = {}
         kc_mods = {}
 
@@ -34,7 +121,8 @@ def transaction_to_student_step(datashop_file):
         elif 'selection' in line and 'action' in line:
             line['step name'] = line['selection'] + ' ' + line['action']
         else:
-            raise Exception('No fields present to make step names, either add a "Step Name" column or "Selection" and "Action" columns.')
+            raise Exception(
+                'No fields present to make step names, either add a "Step Name" column or "Selection" and "Action" columns.')
 
         if 'step name' in line and 'problem name' in line:
             line['prob step'] = line['problem name'] + ' ' + line['step name']
@@ -49,7 +137,7 @@ def transaction_to_student_step(datashop_file):
     kc_model_names = list(set(kc_mods))
     row_count = 0
 
-    with open(out_file,'w') as out:
+    with open(out_file, 'w') as out:
 
         new_head = ['Row',
                     'Anon Student Id',
@@ -63,10 +151,10 @@ def transaction_to_student_step(datashop_file):
                     'First Attempt',
                     'Incorrects',
                     'Corrects',
-                    'Hints',]
+                    'Hints', ]
 
         out.write('\t'.join(new_head))
-        
+
         for km in kc_model_names:
             out.write('\t'+km+'\tOpportunity ('+km[4:])
 
@@ -96,96 +184,33 @@ def transaction_to_student_step(datashop_file):
             kcs = ""
             kc_to_write = []
 
+            steps = {}
+
             # Start iterating through the stuff.
             for i, t in enumerate(transactions):
-                if (problem_name != t['problem name'] or step_name != t['step name']):
+                if problem_name != t['problem name']:
 
-                    # we dont' need to write the first row, because we don't
+                    # we don't need to write the first row, because we don't
                     # have anything yet.
                     if i != 0:
-                        # when we transition to a new step output the previous one.
-                        row_count += 1
-                        line_to_write = [str(row_count),
-                                        student,
-                                        problem_name,
-                                        str(problem_views[problem_name]),
-                                        step_name,
-                                        step_start_time,
-                                        first_transaction_time,
-                                        correct_transaction_time,
-                                        step_end_time,
-                                        first_attempt,
-                                        str(incorrects),
-                                        str(corrects),
-                                        str(hints)]
-                        line_to_write.extend(kc_to_write)
-                        out.write('\t'.join(line_to_write)+'\n')
+                        row_count = write_problem(steps, problem_views,
+                                kc_ops, row_count, kc_model_names, out)
+                        steps = {}
 
-                    # when transitioning to a new step, we need to increment
-                    # the KC counts.
-                    kc_to_write = []
-                    for kc_mod in kc_model_names:
-                        model_name = kc_mod[4:-1]
-                        kcs = t[kc_mod]
-                        kc_to_write.append(kcs)
+                if t['problem name'] not in problem_views:
+                    problem_views[t['problem name']] = 0
+                problem_views[t['problem name']] += 1
 
-                        if model_name not in kc_ops:
-                            kc_ops[model_name] = {}
+                if t['step name'] not in steps:
+                    steps[t['step name']] = []
+                steps[t['step name']].append(t)
 
-                        kcs = kcs.split("~~")
-                        ops = []
-                        for kc in kcs:
-                            if kc not in kc_ops[model_name]:
-                                kc_ops[model_name][kc] = 0
-                            kc_ops[model_name][kc] += 1
-                            ops.append(str(kc_ops[model_name][kc]))
-                        kc_to_write.append("~~".join(ops))
-
-                if problem_name != t['problem name']:
-                    if t['problem name'] not in problem_views:
-                        problem_views[t['problem name']] = 0
-                    problem_views[t['problem name']] += 1
-                
-                if (problem_name != t['problem name'] or step_name != t['step name']):
-                    step_start_time = t['time']
-                    step_end_time = t['time']
-                    first_transaction_time = t['time']
-                    first_attempt = t['outcome'].lower()
-                    correct_transaction_time = ""
-                    corrects = 0
-                    incorrects = 0
-                    hints = 0
-
-                student = t['anon student id']
                 problem_name = t['problem name']
-                step_name = t['step name']
 
-                step_end_time = t['time']
-                if t['outcome'].lower() == 'correct':
-                    correct_transaction_time = t['time']
-                    corrects += 1
-                elif t['outcome'].lower() == 'incorrect':
-                    incorrects += 1
-                elif t['outcome'].lower() == 'hint':
-                    hints += 1
+            # need to write the last problem
+            row_count = write_problem(steps, problem_views, kc_ops,
+                    row_count, kc_model_names, out)
+            steps = {}
 
-            # Need to write the last row.
-            row_count += 1
-            line_to_write = [str(row_count),
-                            student,
-                            problem_name,
-                            str(problem_views[problem_name]),
-                            step_name,
-                            step_start_time,
-                            first_transaction_time,
-                            correct_transaction_time,
-                            step_end_time,
-                            first_attempt,
-                            str(incorrects),
-                            str(corrects),
-                            str(hints)]
-            line_to_write.extend(kc_to_write)
-            out.write('\t'.join(line_to_write)+'\n')
-
-    print('transaction file rolled up into:',out_file)
+    print('transaction file rolled up into:', out_file)
     return out_file
