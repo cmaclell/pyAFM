@@ -67,7 +67,7 @@ def write_problem(steps, problem_views, kc_ops, row_count, kc_model_names,
         rolled_up_step = [str(row_count),
                           student,
                           problem_name,
-                          str(problem_views[problem_name]),
+                          str(problem_views),
                           step_name,
                           step_start_time,
                           first_transaction_time,
@@ -168,23 +168,9 @@ def transaction_to_student_step(datashop_file):
             transactions = sorted(transactions, key=lambda k: k['time'])
             problem_views = {}
             kc_ops = {}
-
             row_count = 0
-            student = ""
-            problem_name = ""
-            step_name = ""
-            step_start_time = ""
-            first_transaction_time = ""
-            correct_transaction_time = ""
-            step_end_time = ""
-            first_attempt = ""
-            incorrects = ""
-            corrects = ""
-            hints = ""
-            kcs = ""
-            kc_to_write = []
-
             steps = {}
+            problem_name = ""
 
             # Start iterating through the stuff.
             for i, t in enumerate(transactions):
@@ -193,13 +179,14 @@ def transaction_to_student_step(datashop_file):
                     # we don't need to write the first row, because we don't
                     # have anything yet.
                     if i != 0:
-                        row_count = write_problem(steps, problem_views,
+
+                        if problem_name not in problem_views:
+                            problem_views[problem_name] = 0
+                        problem_views[problem_name] += 1
+
+                        row_count = write_problem(steps, problem_views[problem_name],
                                 kc_ops, row_count, kc_model_names, out)
                         steps = {}
-
-                if t['problem name'] not in problem_views:
-                    problem_views[t['problem name']] = 0
-                problem_views[t['problem name']] += 1
 
                 if t['step name'] not in steps:
                     steps[t['step name']] = []
@@ -208,8 +195,12 @@ def transaction_to_student_step(datashop_file):
                 problem_name = t['problem name']
 
             # need to write the last problem
-            row_count = write_problem(steps, problem_views, kc_ops,
-                    row_count, kc_model_names, out)
+            if problem_name not in problem_views:
+                problem_views[problem_name] = 0
+            problem_views[problem_name] += 1
+
+            row_count = write_problem(steps, problem_views[problem_name],
+                    kc_ops, row_count, kc_model_names, out)
             steps = {}
 
     print('transaction file rolled up into:', out_file)
