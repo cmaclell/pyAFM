@@ -55,7 +55,7 @@ def afm(kcs, opps, actuals, stu, student_label, item_label, nfolds=3,
               for k, v in sv.inverse_transform([coef_s])[0].items()]
     coef_q = model.coef_[S.shape[1]:S.shape[1]+Q.shape[1]]
     coef_qint = qv.inverse_transform([coef_q])[0]
-    coef_o = model.coef_[S.shape[1]+Q.shape[1]                         :S.shape[1]+Q.shape[1]+O.shape[1]]
+    coef_o = model.coef_[S.shape[1]+Q.shape[1]:S.shape[1]+Q.shape[1]+O.shape[1]]
     coef_qslope = ov.inverse_transform([coef_o])[0]
 
     kc_vals = []

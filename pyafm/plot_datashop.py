@@ -26,12 +26,14 @@ def avg_y_by_x(x, y):
     yv = []
     lcb = []
     ucb = []
+    n_obs = []
 
     for v in xs:
         ys = [y[i] for i, e in enumerate(x) if e == v]
         if len(ys) > 0:
             xv.append(v)
             yv.append(sum(ys) / len(ys))
+            n_obs.append(len(ys))
 
             unique, counts = np.unique(ys, return_counts=True)
             counts = dict(zip(unique, counts))
@@ -40,12 +42,12 @@ def avg_y_by_x(x, y):
                 counts[0] = 0
             if 1 not in counts:
                 counts[1] = 0
-            
+
             ci = beta.interval(0.95, 0.5 + counts[0], 0.5 + counts[1])
             lcb.append(ci[0])
             ucb.append(ci[1])
 
-    return xv, yv, lcb, ucb
+    return xv, yv, lcb, ucb, n_obs
 
 def main():
     parser = argparse.ArgumentParser(description='Process datashop file.')
@@ -131,30 +133,36 @@ def main():
                 y2.append(yAFM[i])
                 y3.append(yAFMS[i])
 
-        x, y1, lcb, ucb = avg_y_by_x(xs, y1)
-        x, y2, _, _ = avg_y_by_x(xs, y2)
-        x, y3, _, _ = avg_y_by_x(xs, y3)
+        x, y1, lcb, ucb, n_obs = avg_y_by_x(xs, y1)
+        x, y2, _, _, _ = avg_y_by_x(xs, y2)
+        x, y3, _, _, _ = avg_y_by_x(xs, y3)
 
         y1 = [1-v for v in y1]
         y2 = [1-v for v in y2]
         y3 = [1-v for v in y3]
 
-        human_line, = plt.plot(x, y1, color='red', label="Actual Data")
-        plt.fill_between(x, lcb, ucb, color='red', alpha=.1)
-        
+        fig, axs = plt.subplots(2, 1, gridspec_kw={'height_ratios': [3, 1]})
+        human_line, = axs[0].plot(x, y1, color='red', label="Actual Data")
+        # human_line, = plt.plot(x, y1, color='red', label="Actual Data")
+        axs[0].fill_between(x, lcb, ucb, color='red', alpha=.1)
+
         lines = [human_line]
 
         if args.m == "AFM" or args.m == "both":
-            afm_line, = plt.plot(x, y2, color='blue', label="AFM")
+            afm_line, = axs[0].plot(x, y2, color='blue', label="AFM")
             lines.append(afm_line)
         if args.m == "AFM+S" or args.m == "both":
-            afms_line, = plt.plot(x, y3, color='green', label="AFM+S")
+            afms_line, = axs[0].plot(x, y3, color='green', label="AFM+S")
             lines.append(afms_line)
-        plt.legend(handles=lines)
-        plt.title(plotkc)
-        plt.xlabel("Opportunities")
-        plt.ylabel("Error")
-        plt.ylim(0, 1)
+        axs[0].legend(handles=lines)
+        axs[0].set_title(plotkc)
+        axs[1].set_xlabel("Opportunities")
+        axs[0].set_ylabel("Error")
+        axs[0].set_ylim(0, 1)
+
+        # dropout = [0] + [n_obs[i] - n_obs[i+1]for i in range(len(n_obs)-1)]
+        axs[1].bar([i for i in range(len(n_obs))], n_obs)
+        axs[1].set_ylabel("# of Obs.")
         # plt.show()
 
         # p.plot(x, y1)
