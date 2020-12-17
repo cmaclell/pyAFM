@@ -114,7 +114,7 @@ def main():
     # f, subplots = plt.subplots(len(plotkcs))
     for plot_id, plotkc in enumerate(plotkcs):
 
-        plt.figure(plot_id+1)
+        # plt.figure(plot_id+1)
 
         # if len(plotkcs) > 1:
         #    p = subplots[plot_id]
