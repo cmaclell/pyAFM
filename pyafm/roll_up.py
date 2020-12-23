@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 from __future__ import division
 import csv
+from dateutil.parser import parse
 
 
 def write_problem(steps, problem_views, kc_ops, row_count, kc_model_names,
@@ -122,7 +123,8 @@ def transaction_to_student_step(datashop_file):
             line['step name'] = line['selection'] + ' ' + line['action']
         else:
             raise Exception(
-                'No fields present to make step names, either add a "Step Name" column or "Selection" and "Action" columns.')
+                'No fields present to make step names, either add a "Step'
+                ' Name" column or "Selection" and "Action" columns.')
 
         if 'step name' in line and 'problem name' in line:
             line['prob step'] = line['problem name'] + ' ' + line['step name']
@@ -165,7 +167,7 @@ def transaction_to_student_step(datashop_file):
 
         for stu in stu_list:
             transactions = students[stu]
-            transactions = sorted(transactions, key=lambda k: k['time'])
+            transactions = sorted(transactions, key=lambda k: parse(k['time']))
             problem_views = {}
             kc_ops = {}
             row_count = 0
@@ -184,8 +186,10 @@ def transaction_to_student_step(datashop_file):
                             problem_views[problem_name] = 0
                         problem_views[problem_name] += 1
 
-                        row_count = write_problem(steps, problem_views[problem_name],
-                                kc_ops, row_count, kc_model_names, out)
+                        row_count = write_problem(steps,
+                                                  problem_views[problem_name],
+                                                  kc_ops, row_count,
+                                                  kc_model_names, out)
                         steps = {}
 
                 if t['step name'] not in steps:
@@ -200,7 +204,7 @@ def transaction_to_student_step(datashop_file):
             problem_views[problem_name] += 1
 
             row_count = write_problem(steps, problem_views[problem_name],
-                    kc_ops, row_count, kc_model_names, out)
+                                      kc_ops, row_count, kc_model_names, out)
             steps = {}
 
     print('transaction file rolled up into:', out_file)
