@@ -6,9 +6,10 @@ from sklearn.feature_extraction import DictVectorizer
 from pyafm.roll_up import transaction_to_student_step
 from pyafm.process_datashop import read_datashop_student_step
 from pyafm.custom_logistic import CustomLogistic
+from pyafm.bounded_logistic import BoundedLogistic
 
 
-def afm_predict_next_step(ssr_file):
+def afm_predict_next_step(ssr_file, model_type):
     results = read_datashop_student_step(ssr_file)
     kcs, opps, y, stu, student_label, item_label = results
 
@@ -45,8 +46,13 @@ def afm_predict_next_step(ssr_file):
 
     X = X.toarray()
 
-    afm = CustomLogistic(bounds=bounds, l2=l2, fit_intercept=False)
-    afm.fit(X, y)
+    if model_type == "AFM":
+        afm = CustomLogistic(bounds=bounds, l2=l2, fit_intercept=False)
+        afm.fit(X, y)
+    elif model_type == "AFM+S":
+        X2 = Q.toarray()
+        afms = BoundedLogistic(first_bounds=bounds, first_l2=l2)
+        afms.fit(X, X2, y)
 
     # Get everything in the right matrix format for predicting next steps.
     new_stu = []
@@ -62,7 +68,12 @@ def afm_predict_next_step(ssr_file):
     NOP = ov.transform(new_opps)
     NX = hstack((NS, NQ, NOP))
     NX = NX.toarray()
-    nextY = afm.predict_proba(NX)
+
+    if model_type == "AFM":
+        nextY = afm.predict_proba(NX)
+    elif model_type == "AFM+S":
+        NX2 = NQ.toarray()
+        nextY = afms.predict_proba(NX, NX2)
 
     with open('next_step_predictions.txt', 'w') as fout:
         fout.write('student,kc,opportunity,prediction\n')
@@ -78,6 +89,9 @@ def main():
     parser.add_argument('-ft', choices=["student_step", "transaction"],
                         help='the type of file to load '
                         '(default="student_step")', default="student_step")
+    parser.add_argument('-m', choices=["AFM", "AFM+S"],
+                        help='the type of model to plot',
+                        default="AFM+S")
     parser.add_argument('student_data', type=argparse.FileType('r'),
                         help="the student data file in datashop format")
     args = parser.parse_args()
@@ -88,7 +102,8 @@ def main():
     else:
         ssr_file = args.student_data
 
-    afm_predict_next_step(ssr_file)
+    afm_predict_next_step(ssr_file, args.m)
+
 
 if __name__ == "__main__":
     main()
